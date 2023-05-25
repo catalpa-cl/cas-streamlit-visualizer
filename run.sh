@@ -11,4 +11,4 @@ if [ ! -d $venv_dir ]; then
 fi
 
 source $venv_dir/bin/activate
-streamlit run __init__.py
+streamlit run visualcas/streamlit_example.py

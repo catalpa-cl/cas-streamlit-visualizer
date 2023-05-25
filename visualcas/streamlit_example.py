@@ -23,10 +23,10 @@ def cas_read_preprocessing():
     pathPos = "de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS"
     pathFreq = "org.lift.type.Frequency"
 
-    with open('resources/TypeSystem.xml', 'rb') as f:
+    with open('data/TypeSystem.xml', 'rb') as f:
         typesys = load_typesystem(f)
 
-    with open('resources/hagen.txt.xmi', 'rb') as f:
+    with open('data/hagen.txt.xmi', 'rb') as f:
         cas = load_cas_from_xmi(f, typesystem=typesys)
 
     # --------------------------------------------------------------
