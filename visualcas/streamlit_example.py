@@ -85,9 +85,20 @@ def visualize_cas_span():
 
 # quick method to wrap the html part around a token (assign background color)
 # can be modified like normal HTML
-def spanWrapper(color, token):
-    return "<span style=\"border-radius: 25px; padding-left:10px; padding-right:10px; background-color: " + \
-           str(color) + "\">" + str(token) + "</span> "
+def spanWrapper(color, token, underline=None, subscript=None, tooltip=None):
+    #subscript = "dummy"
+    #underline = "dummy"
+    #tooltip = "dummy"
+    subscript_msg = ""
+    if subscript is not None:
+        subscript_msg = "<sub style=\"color:grey\">"+subscript+"</sub>"
+    underline_msg = ""
+    if underline is not None:
+        underline_msg = "; text-decoration: underline;text-decoration-thickness: 2px; text-underline-offset:0.1cm; text-decoration-color:" + str(color)
+    tooltip_msg = ""
+    if tooltip is not None:
+        tooltip_msg = " title=\""+tooltip+"\" "
+    return"<span " +tooltip_msg+ "style=\"border-radius: 25px;padding-left:5px; padding-right:5px; background-color: " +str(color)+underline_msg+"\"/>"+str(token)+ subscript_msg +"</span> "
 
 
 # color matching and multiselect
