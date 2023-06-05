@@ -3,34 +3,70 @@ import dataclasses
 import cassis
 from pathlib import Path
 import abc
+import util
+import copy
 
 
 @dataclasses.dataclass
 class ColourConfig:
-    cmap: str
-    vmap: dict
-    data_type: str
+    cmap: str = 'Set1'
+    vmap: dict = None
+    data_type: str = 'nominal'
+
+    # TODO: write proper implementation
+    @classmethod
+    def from_any(cls, config):
+        return cls()
 
 
 @dataclasses.dataclass
 class VisualisationConfig:
     annotation: str
     colour: ColourConfig
-    tooltip: str
-    subscript: str
+    tooltip: str = None
+    subscript: str = None
+
+    @classmethod
+    def from_any(cls, config):
+        type_dict = {
+            cls: cls.from_config,
+            str: cls.from_string,
+            dict: cls.from_dict
+        }
+        return util.map_from_type(config, type_dict)
+
+    @classmethod
+    def from_config(cls, config):
+        return copy.deepcopy(config)
+
+    @classmethod
+    def from_dict(cls, config: dict):
+        return cls(
+            config['annotation'],
+            ColourConfig.from_any(config['colour']),
+            config.get('tooltip'),
+            config.get('subscript')
+        )
+
+    @classmethod
+    def from_string(cls, annotation: str):
+        return cls(
+            annotation,
+            ColourConfig()
+        )
 
 
 # TODO: Concrete versions to be implemented: TableVisualiser and HighlightedTextVisualiser
 class Visualiser(abc.ABC):
     def __init__(
             self,
-            cas: typing.Union[cassis.Cas, str, Path],
-            typesystem: typing.Union[cassis.Cas, str, Path],
-            visualisation_configs: typing.Iterable[typing.Union[str, dict, VisualisationConfig]] = None
+            cas: cassis.Cas,
+            typesystem: cassis.TypeSystem,
+            visualisation_configs: typing.Iterable[VisualisationConfig] = None
     ):
         self.cas = cas
         self.typesystem = typesystem
-        self.visualisation_configs = visualisation_configs
+        self.visualisation_configs = visualisation_configs if visualisation_configs is not None else []
 
     def __call__(self, streamlit_context=None, *args, **kwargs):
         self.visualise(streamlit_context)
@@ -54,14 +90,15 @@ class Visualiser(abc.ABC):
         raise NotImplementedError
 
 
-def highlight(cas: typing.Union[cassis.Cas, str],
-              typesystem: typing.Union[cassis.TypeSystem, str],
-              config: typing.Iterable):
+def highlight(cas: typing.Union[cassis.Cas, str, Path],
+              typesystem: typing.Union[cassis.TypeSystem, str, Path],
+              config: typing.Iterable[typing.Union[str, dict, VisualisationConfig]]):
     raise NotImplementedError
 
-def table(cas: cassis.Cas,
-          typesystem: cassis.TypeSystem,
-          config: typing.Iterable[VisualisationConfig]):
+
+def table(cas: typing.Union[cassis.Cas, str, Path],
+          typesystem: typing.Union[cassis.TypeSystem, str, Path],
+          config: typing.Iterable[typing.Union[str, dict, VisualisationConfig]]):
     raise NotImplementedError
 
 
