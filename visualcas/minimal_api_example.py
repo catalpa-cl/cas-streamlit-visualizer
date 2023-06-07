@@ -19,3 +19,10 @@ cas_vis.table(cas, ts, [cfg], container)
 
 st.write('## Rendering on the spot')
 cas_vis.table(cas, ts, [cfg])
+
+## Visualiser example
+import src.util as util
+import cassis.typesystem as types
+
+vis = cas_vis.visualisation.TableVisualiser(util.load_cas(cas, ts), [cfg])
+vis.visualise()

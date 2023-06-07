@@ -81,17 +81,17 @@ class Visualiser(abc.ABC):
         self.visualise(streamlit_context)
 
     @functools.cached_property
-    def _entities(self):
-        """Returns all entities to be visualised."""
+    def entities(self) -> typing.List[typing.List]:
+        """Returns a list of entities to be visualised. One list containing types is returned for each configuration."""
         entities = []
         for cfg in self.visualisation_configs:
             entities.append(list(self.cas.select(cfg.type_path)))
         return entities
 
     @functools.cached_property
-    def _entity_values(self):
-        """Returns unique entity values to be used for visualisation."""
-        entities = self._entities
+    def unique_entity_values(self):
+        """Returns unique entity values to be used for visualisation, one list of values per visualisation config."""
+        entities = self.entities
         values = []
         for entity_list, cfg in zip(entities, self.visualisation_configs):
             vs = [entity.get(cfg.feature_path) for entity in entity_list]
@@ -120,7 +120,7 @@ class Visualiser(abc.ABC):
 class TableVisualiser(Visualiser):
     def render_visualisation(self):
         records = []
-        for entity_list, cfg in zip(self._entities, self.visualisation_configs):
+        for entity_list, cfg in zip(self.entities, self.visualisation_configs):
             for entity in entity_list:
                 records.append({
                     'text': entity.get_covered_text(),
