@@ -53,8 +53,11 @@ def visualize_cas_span():
 # quick method to wrap the html part around a token (assign background color)
 # can be modified like normal HTML
 def addAnnotationVisHTML(text, color):
-    return "<span style=\"border-radius: 25px; padding-left:10px; padding-right:10px; background-color: " + \
-           str(color) + "\">" + str(text) + "</span> "
+    if color is not 'noColor':
+        return "<span style=\"border-radius: 25px; padding-left:10px; padding-right:10px; background-color: " + \
+            str(color) + "\">" + str(text) + "</span> "
+    else:
+        return text + ' '
 
 
 # color matching and multiselect
@@ -75,7 +78,7 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
     sortedAnnos = sorted(unsortedAnnos, key=lambda x: x.anno_begin, reverse=False)
 
     # currently configured to show all types at visualization time (TODO: make configurable)
-    currentTypes = st.multiselect("Select Type: ", allTypes, allTypes)
+    selectedTypes = st.multiselect("Select Type: ", allTypes, allTypes)
 
     color_scheme1 = ["orangered", "orange", "plum", "palegreen", "mediumseagreen", "lightseagreen",
                      "steelblue", "skyblue", "navajowhite", "mediumpurple", "rosybrown", "silver", "gray",
@@ -91,15 +94,16 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
     output_string = ''
     current_offset = 0
 
-    # typ und feature, zb pos u coarsevalue
-    # TODO typepicking in multiselect
+    # typ und feature
     # TODO parameter for type and feature
-
+    # TODO fix whitespaces and punctuation
     for anno in sortedAnnos:
-
+        color = 'noColor'
+        if anno.anno_type in selectedTypes:
+            color = colorMapping[anno.anno_type]
         output_string = output_string + cas_text[current_offset:anno.anno_begin]
         current_offset = current_offset + anno.anno_end
-        output_string = output_string + addAnnotationVisHTML(anno.anno_text, colorMapping[anno.anno_type])
+        output_string = output_string + addAnnotationVisHTML(anno.anno_text, color)
 
     # tail end des Textes hinzufügen
     if current_offset < len(cas_text):
