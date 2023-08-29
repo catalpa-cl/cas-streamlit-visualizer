@@ -65,11 +65,23 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
 
     allTypes = []
     unsortedAnnos = []
+    fixbugwithdoublespellerrors = []
     #featurePath = "de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS"
     for item in cas.select(featurePath):
         # get info from cas
-        annoobject = AnnoObject(item.begin, item.end, item.coarseValue, item.get_covered_text())
-        unsortedAnnos.append(annoobject)
+        # spell-mis version
+        annoobject = AnnoObject(item.begin, item.end, item.name, item.get_covered_text())
+        #annoobject = AnnoObject(item.begin, item.end, item.coarseValue, item.get_covered_text())
+        if item.begin not in fixbugwithdoublespellerrors:
+            unsortedAnnos.append(annoobject)
+            fixbugwithdoublespellerrors.append(item.begin)
+
+
+
+        # spell-mis version
+        #if item.name not in allTypes:
+            allTypes.append(item.name)
+
 
         # get all possible Types
         if item.coarseValue not in allTypes:
@@ -77,11 +89,14 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
 
     sortedAnnos = sorted(unsortedAnnos, key=lambda x: x.anno_begin, reverse=False)
 
+
+
+
     # currently configured to show all types at visualization time (TODO: make configurable)
     selectedTypes = st.multiselect("Select Type: ", allTypes, allTypes)
 
-    color_scheme1 = ["orangered", "orange", "plum", "palegreen", "mediumseagreen", "lightseagreen",
-                     "steelblue", "skyblue", "navajowhite", "mediumpurple", "rosybrown", "silver", "gray",
+    color_scheme1 = ["skyblue", "orangered", "orange", "plum", "palegreen", "mediumseagreen", "lightseagreen",
+                     "steelblue", "navajowhite", "mediumpurple", "rosybrown", "silver", "gray",
                      "paleturquoise"]
 
     colorMapping = {}  # for the type-color display above the text
@@ -91,29 +106,56 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
         colorMapping[my_type] = color_scheme1[allTypes.index(my_type)]
 
     cas_text = cas.sofa_string
+    
+    new_text = cas_text.replace('\n', '  \n')
+
+
     output_string = ''
     current_offset = 0
 
-    # typ und feature
-    # TODO parameter for type and feature
-    # TODO fix whitespaces and punctuation
-    for anno in sortedAnnos:
-        color = 'noColor'
+    #create legend
+    legend = ''
+    for type in selectedTypes:
+        legend = legend + addAnnotationVisHTML(type, colorMapping[type])
+
+#------------OFFSET--------------------------------------------------------------------------
+    revSortAnnos = sorted(sortedAnnos, key=lambda x: x.anno_begin, reverse=True)
+    textToPrint = cas_text
+
+    for anno in revSortAnnos:
         if anno.anno_type in selectedTypes:
-            color = colorMapping[anno.anno_type]
-        output_string = output_string + cas_text[current_offset:anno.anno_begin]
-        current_offset = current_offset + anno.anno_end
-        output_string = output_string + addAnnotationVisHTML(anno.anno_text, color)
+            htmlend = "</span> "
+            htmlstart = "<span style=\"border-radius: 25px; padding-left:8px; padding-right:8px; background-color: " + \
+                        str(colorMapping[anno.anno_type]) + "\">"
 
-    # tail end des Textes hinzufügen
-    if current_offset < len(cas_text):
-        output_string = output_string + cas_text[:]  # slice
+            textToPrint = textToPrint[:anno.anno_end] + htmlend + textToPrint[anno.anno_end:]
+            textToPrint = textToPrint[:anno.anno_begin] + htmlstart + textToPrint[anno.anno_begin:]
 
-    # sounds dangerous, but it works ;)
-    # and is commonly used in other streamlit components to mess around with texts
-    # st.write(legend, unsafe_allow_html=True)
-    st.write("---------------------")
-    st.write(output_string, unsafe_allow_html=True)
+    textToPrint = textToPrint.replace('\n', '  \n')
+    #st.write(textToPrint, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------------------------------------------------
+
+    #------------OFFSET-END----------------------------------------------------
+    output_array = []
+    output_array.append(legend)
+    output_array.append(textToPrint)
+
+    return output_array
+# ------------------------------------------------------------------------------------
+
+
+def save_image(output_array, file_name):
+
+    css = 'style.css'
+    output_array[1] = output_array[1].replace('  \n', '<br><br>')
+
+    html_string = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><br>' + output_array[0] + '<br><br><hr><br>' \
+                  + output_array[1] + '</body></html>'
+    html_file = open("test.html", "w")
+    html_file.write(html_string)
+    html_file.close()
+    final_name = 'AD_marked/' + file_name + 'new.svg'
+    #print(html_string)
+    imgkit.from_file('test.html', final_name, css=css)
+
 visualize_cas_span()
