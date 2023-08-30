@@ -61,34 +61,42 @@ def addAnnotationVisHTML(text, color):
 
 
 # color matching and multiselect
-def assignColors_and_multiselect(cas, featurePath, highlightValue):
+def assignColors_and_multiselect(cas, typeFeaturePath):
+
+
+    #testPathPos = "de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS/coarseValue"
+    
+    typeFeaturePathList = []
+    if isinstance(typeFeaturePath, str):
+        typeFeaturePathList = [typeFeaturePath]
+    else:
+        typeFeaturePathList = typeFeaturePath
+
 
     allTypes = []
     unsortedAnnos = []
     fixbugwithdoublespellerrors = []
-    #featurePath = "de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS"
-    for item in cas.select(featurePath):
+    for typeFeature in typeFeaturePathList:
+        split = typeFeature.split('/')
+        typePath = split[0]
+        featPath = split[1]
+
+
+        for item in cas.select(typePath):
         # get info from cas
         # spell-mis version
-        annoobject = AnnoObject(item.begin, item.end, item.name, item.get_covered_text())
-        #annoobject = AnnoObject(item.begin, item.end, item.coarseValue, item.get_covered_text())
-        if item.begin not in fixbugwithdoublespellerrors:
-            unsortedAnnos.append(annoobject)
-            fixbugwithdoublespellerrors.append(item.begin)
-
-
-
-        # spell-mis version
-        #if item.name not in allTypes:
-            allTypes.append(item.name)
+        #annoobject = AnnoObject(item.begin, item.end, item.name, item.get_covered_text())
+            annoobject = AnnoObject(item.begin, item.end, getattr(item, featPath), item.get_covered_text())
+            if item.begin not in fixbugwithdoublespellerrors:
+                unsortedAnnos.append(annoobject)
+                fixbugwithdoublespellerrors.append(item.begin)
 
 
         # get all possible Types
-        if item.coarseValue not in allTypes:
-            allTypes.append(item.coarseValue)
+            if getattr(item, featPath) not in allTypes:
+                allTypes.append(getattr(item, featPath))
 
     sortedAnnos = sorted(unsortedAnnos, key=lambda x: x.anno_begin, reverse=False)
-
 
 
 
@@ -97,7 +105,7 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
 
     color_scheme1 = ["skyblue", "orangered", "orange", "plum", "palegreen", "mediumseagreen", "lightseagreen",
                      "steelblue", "navajowhite", "mediumpurple", "rosybrown", "silver", "gray",
-                     "paleturquoise"]
+                     "paleturquoise", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue"]
 
     colorMapping = {}  # for the type-color display above the text
 
@@ -106,8 +114,12 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
         colorMapping[my_type] = color_scheme1[allTypes.index(my_type)]
 
     cas_text = cas.sofa_string
-    
+    #print(cas_text.find('\n'))
+    #print(cas_text[140:160])
     new_text = cas_text.replace('\n', '  \n')
+    #st.write(new_text)
+    #print(new_text)
+    #st.write('lululu  \nhshshshshshsh')
 
 
     output_string = ''
@@ -115,11 +127,17 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
 
     #create legend
     legend = ''
+    #st.write(selectedTypes)
     for type in selectedTypes:
         legend = legend + addAnnotationVisHTML(type, colorMapping[type])
+    # typ und feature
+    # TODO parameter for type and feature
+    # TODO fix whitespaces and punctuation
+    # big TODO : make everything offset based!
 
 #------------OFFSET--------------------------------------------------------------------------
     revSortAnnos = sorted(sortedAnnos, key=lambda x: x.anno_begin, reverse=True)
+    #st.write(revSortAnnos)
     textToPrint = cas_text
 
     for anno in revSortAnnos:
@@ -131,18 +149,21 @@ def assignColors_and_multiselect(cas, featurePath, highlightValue):
             textToPrint = textToPrint[:anno.anno_end] + htmlend + textToPrint[anno.anno_end:]
             textToPrint = textToPrint[:anno.anno_begin] + htmlstart + textToPrint[anno.anno_begin:]
 
+
+    #print(textToPrint)
     textToPrint = textToPrint.replace('\n', '  \n')
     #st.write(textToPrint, unsafe_allow_html=True)
 
 
-    #------------OFFSET-END----------------------------------------------------
+    #------------OFFSET-END----------------------------------------------------------------------
+
     output_array = []
     output_array.append(legend)
     output_array.append(textToPrint)
 
     return output_array
-# ------------------------------------------------------------------------------------
 
+    
 
 def save_image(output_array, file_name):
 
